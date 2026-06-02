@@ -8,12 +8,11 @@ import sys
 from pathlib import Path
 
 import httpx
-import questionary
 from dotenv import dotenv_values, set_key
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.prompt import Prompt
+from rich.prompt import Confirm, Prompt
 
 console = Console()
 
@@ -59,8 +58,8 @@ def validate_token(token: str) -> bool:
 
 async def test_bot_token(token: str) -> dict | None:
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            r = await client.get(f"https://api.telegram.org/bot{token}/getMe")
+        with httpx.Client(timeout=10) as client:
+            r = client.get(f"https://api.telegram.org/bot{token}/getMe")
             if r.status_code == 200 and r.json().get("ok"):
                 return r.json()["result"]
     except Exception:
@@ -88,7 +87,7 @@ def check_opencode() -> str | None:
         return None
 
 
-async def prompt_telegram_token() -> str:
+def prompt_telegram_token() -> str:
     header("Step 1 / 6 - Telegram bot token")
     console.print(
         "  Open Telegram, message [bold]@BotFather[/bold], run [bold]/newbot[/bold],\n"
@@ -100,7 +99,7 @@ async def prompt_telegram_token() -> str:
             warn("That doesn't look like a valid bot token. Try again.")
             continue
         with console.status("  Testing token against Telegram API..."):
-            me = await test_bot_token(token)
+            me = test_bot_token(token)
         if not me:
             warn("Token rejected by Telegram. Double-check and try again.")
             continue
@@ -153,7 +152,7 @@ def confirm_install() -> bool:
     console.print(f"  Install dir:  [green]{INSTALL_DIR}[/green]")
     console.print(f"  Repo dir:     [green]{REPO_DIR}[/green]")
     console.print(f"  Env file:     [green]{ENV_PATH}[/green]")
-    return questionary.confirm("  Proceed?", default=True).ask()
+    return Confirm.ask("  Proceed?", default=True)
 
 
 def write_env(values: dict) -> None:
@@ -217,7 +216,7 @@ def ensure_opencode() -> None:
         step(f"opencode found: {v}")
         return
     warn("opencode is not installed or not in PATH.")
-    install = questionary.confirm("  Install opencode now via the official script?", default=True).ask()
+    install = Confirm.ask("  Install opencode now via the official script?", default=True)
     if not install:
         fail("OpenCode is required. Install it manually: curl -fsSL https://opencode.ai/install | bash")
     console.print("  Running installer (this can take a minute)...")
@@ -233,7 +232,7 @@ def ensure_cron() -> None:
     if rc == 0:
         step("cron is running.")
         return
-    if not questionary.confirm("  cron is not running. Start it now?", default=True).ask():
+    if not Confirm.ask("  cron is not running. Start it now?", default=True):
         warn("Skipped. Cron jobs will not fire until you start cron.")
         return
     subprocess.call("service cron start", shell=True)
@@ -257,7 +256,7 @@ def show_next_steps() -> None:
     )
 
 
-async def main() -> None:
+def main() -> None:
     console.print(
         Panel.fit(
             "[bold cyan]OpenCode Telegram Server[/bold cyan]\n"
@@ -270,7 +269,7 @@ async def main() -> None:
     ensure_opencode()
     ensure_cron()
 
-    token = await prompt_telegram_token()
+    token = prompt_telegram_token()
     user_id = prompt_user_id()
     model = prompt_model()
     tz = prompt_timezone()
@@ -298,10 +297,8 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    import asyncio
-
     try:
-        asyncio.run(main())
+        main()
     except KeyboardInterrupt:
         console.print("\n[yellow]Cancelled.[/yellow]")
         sys.exit(130)
