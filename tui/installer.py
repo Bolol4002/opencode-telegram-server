@@ -56,7 +56,7 @@ def validate_token(token: str) -> bool:
     return head.isdigit()
 
 
-async def test_bot_token(token: str) -> dict | None:
+def test_bot_token(token: str) -> dict | None:
     try:
         with httpx.Client(timeout=10) as client:
             r = client.get(f"https://api.telegram.org/bot{token}/getMe")
