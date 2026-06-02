@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -e
 
-REPO_URL="${REPO_URL:-https://github.com/bolol4002/opencode-telegram-server.git}"
+REPO_URL="${REPO_URL:-https://github.com/Bolol4002/opencode-telegram-server.git}"
 BRANCH="${BRANCH:-main}"
 TERMUX_INSTALL_ROOT="$HOME/.opencode-telegram-termux"
 PROOT_INSTALL_ROOT="/root/.opencode-telegram"

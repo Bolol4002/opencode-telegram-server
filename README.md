@@ -39,10 +39,10 @@ Run [OpenCode](https://opencode.ai) 24/7 on an always-on Android phone (Termux +
 Open Termux and run **one command**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/bolol4002/opencode-telegram-server/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Bolol4002/opencode-telegram-server/main/install.sh | bash
 ```
 
-(Replace `bolol4002` with your GitHub handle after you push this repo. While you're testing locally you can `git clone` this repo on the phone and run `./install.sh` from inside it.)
+(Replace `Bolol4002` with your GitHub handle after you push this repo. While you're testing locally you can `git clone` this repo on the phone and run `./install.sh` from inside it.)
 
 The script will:
 
