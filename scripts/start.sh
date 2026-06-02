@@ -21,9 +21,10 @@ set -a
 . $INSTALL_ROOT/.env
 set +a
 export OPENCODE_SERVER_PASSWORD
-nohup opencode serve --hostname 127.0.0.1 --port 4096 \
-  > $LOG_DIR/opencode.log 2>&1 &
+setsid nohup opencode serve --hostname 127.0.0.1 --port 4096 \
+  > $LOG_DIR/opencode.log 2>&1 < /dev/null &
 echo \$! > $OC_PIDFILE
+disown
 sleep 2
 "
 
@@ -33,8 +34,9 @@ mkdir -p $LOG_DIR
 cd $REPO_DIR
 source $VENV/bin/activate
 export TELEGRAM_BOT_TOKEN TELEGRAM_ALLOWED_USER_ID OPENCODE_SERVER_PASSWORD
-nohup python3 -m bot.main > $LOG_DIR/bot.out 2>&1 &
+setsid nohup python3 -m bot.main > $LOG_DIR/bot.out 2>&1 < /dev/null &
 echo \$! > $PIDFILE
+disown
 "
 
 sleep 2
