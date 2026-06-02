@@ -68,10 +68,15 @@ pip install --upgrade pip wheel
 pip install -r requirements.txt
 "
 
-cp "$TERMUX_INSTALL_ROOT/repo/scripts/start.sh" "$TERMUX_INSTALL_ROOT/start.sh"
-cp "$TERMUX_INSTALL_ROOT/repo/scripts/stop.sh"  "$TERMUX_INSTALL_ROOT/stop.sh"
-cp "$TERMUX_INSTALL_ROOT/repo/scripts/boot.sh"  "$TERMUX_INSTALL_ROOT/boot.sh"
-chmod +x "$TERMUX_INSTALL_ROOT/start.sh" "$TERMUX_INSTALL_ROOT/stop.sh"
+link_script() {
+  local src="$1" dst="$2"
+  [ -e "$dst" ] && [ ! -L "$dst" ] && rm -f "$dst"
+  ln -sf "$src" "$dst"
+  chmod +x "$src"
+}
+link_script "$TERMUX_INSTALL_ROOT/repo/scripts/start.sh" "$TERMUX_INSTALL_ROOT/start.sh"
+link_script "$TERMUX_INSTALL_ROOT/repo/scripts/stop.sh"  "$TERMUX_INSTALL_ROOT/stop.sh"
+link_script "$TERMUX_INSTALL_ROOT/repo/scripts/boot.sh"  "$TERMUX_INSTALL_ROOT/boot.sh"
 
 echo
 echo "================================================================"
@@ -89,7 +94,6 @@ python3 tui/installer.py
 echo
 echo "[*] Installing Termux:Boot autostart hook..."
 mkdir -p "$HOME/.termux/boot"
-cp "$TERMUX_INSTALL_ROOT/repo/scripts/boot.sh" "$HOME/.termux/boot/opencode-telegram.sh"
-chmod +x "$HOME/.termux/boot/opencode-telegram.sh"
+link_script "$TERMUX_INSTALL_ROOT/repo/scripts/boot.sh" "$HOME/.termux/boot/opencode-telegram.sh"
 step "Installed: $HOME/.termux/boot/opencode-telegram.sh" 2>/dev/null || \
   echo "    Installed: $HOME/.termux/boot/opencode-telegram.sh"
