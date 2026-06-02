@@ -88,6 +88,16 @@ def check_opencode() -> str | None:
 
 
 def prompt_telegram_token() -> str:
+    env_token = os.environ.get("OPENCODE_TG_INSTALL_TOKEN", "").strip()
+    if env_token:
+        header("Step 1 / 6 - Telegram bot token (non-interactive)")
+        with console.status("  Testing token against Telegram API..."):
+            me = test_bot_token(env_token)
+        if not me:
+            fail("OPENCODE_TG_INSTALL_TOKEN was rejected by Telegram. Fix it and re-run.")
+        step(f"Connected to bot: @{me.get('username')} ({me.get('first_name')})")
+        return env_token
+
     header("Step 1 / 6 - Telegram bot token")
     console.print(
         "  Open Telegram, message [bold]@BotFather[/bold], run [bold]/newbot[/bold],\n"
@@ -108,6 +118,14 @@ def prompt_telegram_token() -> str:
 
 
 def prompt_user_id() -> int:
+    env_id = os.environ.get("OPENCODE_TG_INSTALL_USER_ID", "").strip()
+    if env_id:
+        header("Step 2 / 6 - Your Telegram user ID (non-interactive)")
+        if env_id.isdigit() and len(env_id) >= 6:
+            step(f"User ID: {env_id}")
+            return int(env_id)
+        fail("OPENCODE_TG_INSTALL_USER_ID must be 6+ digits.")
+
     header("Step 2 / 6 - Your Telegram user ID")
     console.print(
         "  Message [bold]@userinfobot[/bold] on Telegram; it will reply with your numeric ID.\n"
@@ -121,16 +139,28 @@ def prompt_user_id() -> int:
 
 
 def prompt_model() -> str:
-    header("Step 3 / 6 - OpenCode model")
     default = "opencode/minimax-m3-free"
+    env_model = os.environ.get("OPENCODE_TG_INSTALL_MODEL", "").strip()
+    if env_model:
+        header("Step 3 / 6 - OpenCode model (non-interactive)")
+        step(f"Model: {env_model}")
+        return env_model
+
+    header("Step 3 / 6 - OpenCode model")
     console.print(f"  Default: [green]{default}[/green]  (press Enter to accept)")
     m = Prompt.ask("  Model (provider/model)", default=default).strip()
     return m or default
 
 
 def prompt_timezone() -> str:
-    header("Step 4 / 6 - Timezone")
     detected = detect_tz()
+    env_tz = os.environ.get("OPENCODE_TG_INSTALL_TZ", "").strip()
+    if env_tz:
+        header("Step 4 / 6 - Timezone (non-interactive)")
+        step(f"TZ: {env_tz}")
+        return env_tz
+
+    header("Step 4 / 6 - Timezone")
     console.print(f"  Detected: [green]{detected}[/green]  (press Enter to accept)")
     tz = Prompt.ask("  Timezone (IANA, e.g. Asia/Kolkata)", default=detected).strip()
     return tz or "UTC"
@@ -148,6 +178,10 @@ def prompt_extras() -> dict:
 
 
 def confirm_install() -> bool:
+    if os.environ.get("OPENCODE_TG_INSTALL_YES") == "1":
+        header("Step 6 / 6 - Ready to install (non-interactive)")
+        step("Proceeding (OPENCODE_TG_INSTALL_YES=1).")
+        return True
     header("Step 6 / 6 - Ready to install")
     console.print(f"  Install dir:  [green]{INSTALL_DIR}[/green]")
     console.print(f"  Repo dir:     [green]{REPO_DIR}[/green]")
@@ -216,7 +250,11 @@ def ensure_opencode() -> None:
         step(f"opencode found: {v}")
         return
     warn("opencode is not installed or not in PATH.")
-    install = Confirm.ask("  Install opencode now via the official script?", default=True)
+    install = (
+        True
+        if os.environ.get("OPENCODE_TG_INSTALL_YES") == "1"
+        else Confirm.ask("  Install opencode now via the official script?", default=True)
+    )
     if not install:
         fail("OpenCode is required. Install it manually: curl -fsSL https://opencode.ai/install | bash")
     console.print("  Running installer (this can take a minute)...")
@@ -232,7 +270,12 @@ def ensure_cron() -> None:
     if rc == 0:
         step("cron is running.")
         return
-    if not Confirm.ask("  cron is not running. Start it now?", default=True):
+    start = (
+        True
+        if os.environ.get("OPENCODE_TG_INSTALL_YES") == "1"
+        else Confirm.ask("  cron is not running. Start it now?", default=True)
+    )
+    if not start:
         warn("Skipped. Cron jobs will not fire until you start cron.")
         return
     subprocess.call("service cron start", shell=True)

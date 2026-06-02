@@ -22,6 +22,8 @@ stop_pid() {
 }
 
 proot-distro login ubuntu --shared-tmp -- /bin/bash -c "
+  $INSTALL_ROOT/repo/scripts/proot-supervisor.sh stop 2>/dev/null || true
+  pkill -f 'proot-supervisor.sh' 2>/dev/null || true
   pkill -f 'bot/main.py' 2>/dev/null || true
   pkill -f 'opencode serve' 2>/dev/null || true
   crontab -r 2>/dev/null || true

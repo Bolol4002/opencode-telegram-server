@@ -14,30 +14,19 @@ termux-wake-lock || true
 echo "[*] Starting cron daemon inside proot Ubuntu..."
 proot-distro login ubuntu --shared-tmp -- /bin/bash -c "mkdir -p $LOG_DIR && service cron start 2>/dev/null || cron"
 
-echo "[*] Starting opencode serve in background..."
+echo "[*] Starting opencode serve + bot via proot supervisor..."
 proot-distro login ubuntu --shared-tmp -- /bin/bash -c "
 mkdir -p $LOG_DIR
-set -a
-. $INSTALL_ROOT/.env
-set +a
-export OPENCODE_SERVER_PASSWORD
-setsid nohup opencode serve --hostname 127.0.0.1 --port 4096 \
-  > $LOG_DIR/opencode.log 2>&1 < /dev/null &
-echo \$! > $OC_PIDFILE
+chmod +x $REPO_DIR/scripts/proot-supervisor.sh
+setsid $REPO_DIR/scripts/proot-supervisor.sh start > $LOG_DIR/supervisor.out 2>&1 < /dev/null &
 disown
-sleep 2
+sleep 3
 "
 
-echo "[*] Starting Telegram bot..."
-proot-distro login ubuntu --shared-tmp -- /bin/bash -c "
-mkdir -p $LOG_DIR
-cd $REPO_DIR
-source $VENV/bin/activate
-export TELEGRAM_BOT_TOKEN TELEGRAM_ALLOWED_USER_ID OPENCODE_SERVER_PASSWORD
-setsid nohup python3 -m bot.main > $LOG_DIR/bot.out 2>&1 < /dev/null &
-echo \$! > $PIDFILE
-disown
-"
+sleep 1
+echo "[*] Done. Tail logs with:"
+echo "    proot-distro login ubuntu -- tail -f $LOG_DIR/bot.out"
+echo "    proot-distro login ubuntu -- tail -f $LOG_DIR/opencode.log"
 
 sleep 2
 echo "[*] Done. Tail logs with:"
